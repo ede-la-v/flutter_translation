@@ -70,7 +70,6 @@ class AddState extends State<AddTranslation> {
 
 class NonVerb extends StatefulWidget {
   final onSubmit;
-  final verb;
 
   const NonVerb({
     Key key,
