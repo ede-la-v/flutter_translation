@@ -1,12 +1,45 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 class AddTranslation extends StatefulWidget {
   final onSubmit;
+  final AnimationController controller;
+  final Animation<EdgeInsets> movement;
+  final Animation<double> opacity;
 
-  const AddTranslation({
+  AddTranslation({
     Key key,
     @required this.onSubmit,
+    @required this.controller
   })  : assert(onSubmit != null),
+        opacity = Tween(
+          begin: 0.0,
+          end: 1.0,
+        ).animate(CurvedAnimation(
+            parent: controller,
+            curve: Interval(
+              0.0,
+              0.4,
+              curve: Curves.linear,
+            ))),
+        movement = EdgeInsetsTween(
+          begin: EdgeInsets.all(0.0),
+          end: EdgeInsets.only(
+              left: 15.0,
+              right: 15.0,
+              bottom: 15.0,
+              top: 60.0
+          ),
+        ).animate(
+          CurvedAnimation(
+            parent: controller,
+            curve: Interval(
+              0.4,
+              1.0,
+              curve: Curves.linear,
+            ),
+          ),
+        ),
         super(key: key);
 
   @override
@@ -16,54 +49,76 @@ class AddTranslation extends StatefulWidget {
 class AddState extends State<AddTranslation> {
   bool verb = false;
 
+
   @override
   void initState() {
     super.initState();
   }
 
   @override
+  void didUpdateWidget(AddTranslation oldWidget) {
+    print(widget.movement.value);
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.withOpacity(0.5),
-      body: Container(
-        margin: EdgeInsets.only(
-            left: 15.0, 
-            right: 15.0,
-            bottom: 15.0,
-            top: 60.0
-        ),
-        color: Colors.blueGrey[100],
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                  Container(
-                    width: 45.0,
-                    height: 45.0,
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (BuildContext context, Widget child) {
+        return Opacity(
+          opacity: widget.opacity.value,
+          child: Scaffold(
+            backgroundColor: Colors.grey.withOpacity(0.5),
+            body: Container(
+              margin: widget.movement.value,
+              color: Colors.blueGrey[100],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Container(
+                        width: 45.0,
+                        height: 45.0,
+                      ),
+                      Expanded(
+                          child: Center(
+                            child: Text(
+                              "Ajouter une traduction",
+                              style: TextStyle(
+                                  fontSize: 20.0,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blueGrey[700]
+                              ),
+                            ),
+                          )
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          try {
+                            await widget.controller.reverse().orCancel;
+                            Navigator.of(context).pop();
+                          } on TickerCanceled {
+                            print('Animation Failed');
+                          }
+                        },
+                        child: Container(
+                          width: 45.0,
+                          height: 45.0,
+                          child: Icon(Icons.close),
+                        )
+                      ),
+                    ],
                   ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                        "Ajouter une traduction",
-                        style: TextStyle(
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blueGrey[700]
-                        ),
-                    ),
-                  )
-                ),
-                Container(
-                    child: CloseButton(),
-                  ),
-              ],
+                  NonVerb(onSubmit: widget.onSubmit,)
+                ],
+              ),
             ),
-            NonVerb(onSubmit: widget.onSubmit,)
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

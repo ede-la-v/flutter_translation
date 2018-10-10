@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:throttle_debounce/throttle_debounce.dart';
 
 import 'package:flutter_tensoring/addTranslation.dart';
 import 'package:flutter_tensoring/conjugation.dart';
@@ -20,7 +22,7 @@ class Dictionary extends StatefulWidget {
   DictState createState() => new DictState();
 }
 
-class DictState extends State<Dictionary> {
+class DictState extends State<Dictionary> with TickerProviderStateMixin {
   List translationData = [
     {"spanish": "hacer", "french": "faire", "verb": true},
     {"spanish": "vaso", "french": "verre", "verb": false},
@@ -37,12 +39,61 @@ class DictState extends State<Dictionary> {
   FocusNode _focus = FocusNode();
   TextEditingController searchController = TextEditingController();
   Widget searchIcon = Icon(Icons.search, color: Colors.blueGrey.withOpacity(0.5),);
+  AnimationController _controller;
+  AnimationController _controllerList;
+  Animation<double> numberList;
+  var debouncer;
 
   @override
   void initState() {
     super.initState();
     _focus.addListener(_onFocusChange);
     translationDataTemp = translationData.where((test) => true).toList();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _controllerList = AnimationController(
+      duration: Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    numberList = Tween(
+      begin: 1.0,
+      end: translationDataTemp.length + .0,
+    ).animate(CurvedAnimation(
+        parent: _controllerList,
+        curve: Interval(
+          0.0,
+          0.4,
+          curve: Curves.linear,
+        )));
+    _startAnimationList();
+    debouncer = new Debouncer(const Duration(milliseconds:250), callback, []);
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _controllerList?.dispose();
+    super.dispose();
+  }
+
+  Future _startAnimation() async {
+    _controller.value = 0.0;
+    try {
+      await _controller.forward().orCancel;
+    } on TickerCanceled {
+      print('Animation Failed');
+    }
+  }
+
+  Future _startAnimationList() async {
+    _controllerList.value = 0.0;
+    try {
+      await _controllerList.forward().orCancel;
+    } on TickerCanceled {
+      print('Animation Failed');
+    }
   }
 
   void _onFocusChange(){
@@ -74,7 +125,9 @@ class DictState extends State<Dictionary> {
     return false;
   }
 
-  void _onChangeSearch(String text) {
+  void callback(List args) {
+    String text = searchController.text;
+    print(text);
     setState(() {
       if (text != "") {
         searchIcon = Icon(Icons.close, color: Colors.red, size: 18.0,);
@@ -83,7 +136,22 @@ class DictState extends State<Dictionary> {
         searchIcon = Icon(Icons.search, color: Colors.blueGrey.withOpacity(1.0),);
         translationDataTemp = translationData.where((test) => true).toList();
       }
+      numberList = Tween(
+        begin: 1.0,
+        end: translationDataTemp.length + .0,
+      ).animate(CurvedAnimation(
+          parent: _controllerList,
+          curve: Interval(
+            0.0,
+            0.4,
+            curve: Curves.linear,
+          )));
+      _startAnimationList();
     });
+  }
+
+  void _onChangeSearch(String text) {
+    debouncer.debounce();
   }
 
   bool _unfocus(String language, int index, String word) {
@@ -114,6 +182,16 @@ class DictState extends State<Dictionary> {
     print(translationData);
     setState(() {
       translationDataTemp = translationData.where((translation) => _filter(translation, searchController.text)).toList();
+      numberList = Tween(
+        begin: 1.0,
+        end: translationDataTemp.length + .0,
+      ).animate(CurvedAnimation(
+          parent: _controllerList,
+          curve: Interval(
+            0.0,
+            0.4,
+            curve: Curves.linear,
+          )));
     });
   }
 
@@ -179,19 +257,24 @@ class DictState extends State<Dictionary> {
 
               ),
               Expanded(
-                child: ListView.builder(
-                    itemCount: translationDataTemp == null ? 0 : translationDataTemp.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return Translation(
-                        index: index,
-                        unfocus: _unfocus,
-                        remove: _removeItem,
-                        spanish: translationDataTemp[index]["spanish"],
-                        french: translationDataTemp[index]["french"],
-                        verb: translationDataTemp[index]["verb"],
+                child: AnimatedBuilder(
+                    animation: _controllerList,
+                    builder: (BuildContext context, Widget child) {
+                      return ListView.builder(
+                          itemCount: translationDataTemp == null ? 0 : numberList.value.round(),
+                          itemBuilder: (BuildContext context, int index) {
+                            return Translation(
+                              index: index,
+                              unfocus: _unfocus,
+                              remove: _removeItem,
+                              spanish: translationDataTemp[index]["spanish"],
+                              french: translationDataTemp[index]["french"],
+                              verb: translationDataTemp[index]["verb"],
+                            );
+                          }
                       );
                     }
-                ),
+                    )
               )
             ],
           ),
@@ -199,10 +282,12 @@ class DictState extends State<Dictionary> {
       ),
       floatingActionButton: FloatingActionButton(
           onPressed: () {
+            _startAnimation();
             Navigator.of(context).push(PageRouteBuilder(
                 opaque: false,
                 pageBuilder: (BuildContext context, _, __) {
-                  return AddTranslation(onSubmit: (String spanish, String french, bool verb) {
+                  return AddTranslation(
+                    onSubmit: (String spanish, String french, bool verb) {
                     print(spanish);
                     print(french);
                     print(verb);
@@ -216,7 +301,8 @@ class DictState extends State<Dictionary> {
                     });
                     print(translationData);
                     print(translationDataTemp);
-                  },);
+                  },
+                  controller: _controller);
                 },
             ));
           },
