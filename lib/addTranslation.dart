@@ -212,6 +212,7 @@ class NonVerbState extends State<NonVerb> {
                   formWasSubmitted = true;
                   _focusFrench.unfocus();
                   _focusSpanish.unfocus();
+                  print("ok je suis ici");
                   if (_formKey.currentState.validate()) {
                     Scaffold.of(context)
                         .showSnackBar(SnackBar(content: Text('Processing Data')));
