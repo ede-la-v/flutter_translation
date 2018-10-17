@@ -94,7 +94,6 @@ class TranslationDatabase {
     List resultFinal;
     var results = await dbClient
         .rawQuery('SELECT spanish, french, verb FROM Translations');
-    print("ok ok");
     resultFinal = results.map((translation) {
       return {
         "spanish": translation["spanish"],
@@ -105,10 +104,54 @@ class TranslationDatabase {
     return resultFinal;
   }
 
+  Future<Map<String, dynamic>> getConjugation(String spanish) async {
+    var dbClient = await db;
+    Map<String, dynamic> resultFinal = {"present": {}, "future": {}};
+    var results = await dbClient.rawQuery(
+        'SELECT * FROM Translations WHERE spanish = "' + spanish + '"');
+    print('SELECT * FROM Translations WHERE spanish = "' + spanish + '"');
+    print(results);
+    resultFinal["present"] = [
+      results[0]["present1"],
+      results[0]["present2"],
+      results[0]["present3"],
+      results[0]["present4"],
+      results[0]["present5"],
+      results[0]["present6"],
+    ];
+    resultFinal["future"] = [
+      results[0]["future1"],
+      results[0]["future2"],
+      results[0]["future3"],
+      results[0]["future4"],
+      results[0]["future5"],
+      results[0]["future6"],
+    ];
+    return resultFinal;
+  }
+
   Future deleteTranslation(String spanish) async {
     var dbClient = await db;
     await dbClient.rawDelete(
         'DELETE FROM Translations WHERE spanish = "' + spanish + '"');
+  }
+
+  Future changeTranslation(String change, String column, String spanish) async {
+    var dbClient = await db;
+    print('UPDATE Translations SET ' +
+        column +
+        ' = "' +
+        change +
+        '" WHERE spanish = "' +
+        spanish +
+        '"');
+    await dbClient.rawUpdate('UPDATE Translations SET ' +
+        column +
+        ' = "' +
+        change +
+        '" WHERE spanish = "' +
+        spanish +
+        '"');
   }
 
   Future closeDb() async {

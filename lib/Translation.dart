@@ -84,7 +84,10 @@ class TranslationState extends State<Translation> {
     _focusSpanish.addListener(_onFocusSpanish);
     _focusFrench.addListener(_onFocusFrench);
     if (widget.verb) {
-      iconOpen = OpenVerb(name: widget.french);
+      iconOpen = OpenVerb(
+        french: widget.french,
+        spanish: widget.spanish,
+      );
     }
   }
 
@@ -94,7 +97,10 @@ class TranslationState extends State<Translation> {
     spanishController.text = widget.spanish;
     frenchController.text = widget.french;
     if (widget.verb) {
-      iconOpen = OpenVerb(name: widget.french);
+      iconOpen = OpenVerb(
+        french: widget.french,
+        spanish: widget.spanish,
+      );
     } else {
       iconOpen = Container();
     }
@@ -198,10 +204,12 @@ class TranslationState extends State<Translation> {
 }
 
 class OpenVerb extends StatelessWidget {
-  final String name;
+  final french;
+  final spanish;
 
-  const OpenVerb({Key key, @required this.name})
-      : assert(name != null),
+  const OpenVerb({Key key, @required this.french, @required this.spanish})
+      : assert(french != null),
+        assert(spanish != null),
         super(key: key);
 
   @override
@@ -214,9 +222,7 @@ class OpenVerb extends StatelessWidget {
             Navigator.of(context).push(PageRouteBuilder(
                   opaque: false,
                   pageBuilder: (BuildContext context, _, __) {
-                    return Conjugation(
-                      name: name,
-                    );
+                    return Conjugation(french: french, spanish: spanish);
                   },
                 ));
           },

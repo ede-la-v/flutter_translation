@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tensoring/database.dart';
+
+List type = ["Je", "Tu", "Il, elle, on", "Nous", "vous", "Ils, elles"];
 
 class Conjugation extends StatefulWidget {
-  final name;
+  final french;
+  final spanish;
 
-  const Conjugation({
-    Key key,
-    @required this.name
-  })
-      : assert(name != null),
+  const Conjugation({Key key, @required this.french, @required this.spanish})
+      : assert(french != null),
+        assert(spanish != null),
         super(key: key);
 
   @override
@@ -15,7 +17,6 @@ class Conjugation extends StatefulWidget {
 }
 
 class ConjugationState extends State<Conjugation> {
-
   @override
   void initState() {
     super.initState();
@@ -26,12 +27,8 @@ class ConjugationState extends State<Conjugation> {
     return Scaffold(
       backgroundColor: Colors.grey.withOpacity(0.5),
       body: Container(
-        margin: EdgeInsets.only(
-            left: 15.0,
-            right: 15.0,
-            bottom: 15.0,
-            top: 60.0
-        ),
+        margin:
+            EdgeInsets.only(left: 15.0, right: 15.0, bottom: 15.0, top: 60.0),
         color: Colors.blueGrey[100],
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -45,22 +42,20 @@ class ConjugationState extends State<Conjugation> {
                 ),
                 Expanded(
                     child: Center(
-                      child: Text(
-                        widget.name,
-                        style: TextStyle(
-                            fontSize: 20.0,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blueGrey[700]
-                        ),
-                      ),
-                    )
-                ),
+                  child: Text(
+                    widget.spanish,
+                    style: TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blueGrey[700]),
+                  ),
+                )),
                 Container(
                   child: CloseButton(),
                 ),
               ],
             ),
-            Times()
+            Times(widget.spanish)
           ],
         ),
       ),
@@ -69,50 +64,86 @@ class ConjugationState extends State<Conjugation> {
 }
 
 class Times extends StatefulWidget {
+  final name;
+
+  Times(this.name);
+
   @override
   TimesState createState() => new TimesState();
 }
 
 class TimesState extends State<Times> {
   int time = 1;
-  Map conjugation = {
-    "Present" : {"Je":"truce", "Il, elle, on": "otro"},
-    "Future" : {"Nous":"truc", "Vous": "chose"}
-  };
+  Map conjugation = {"present": [], "future": []};
+  TranslationDatabase db;
 
-  List<String> findConjugation(String place) {
-    switch (time) {
-      case 1: {
-        return [place, conjugation["Present"][place] != null ? conjugation["Present"][place] : ""];
-      }
-      break;
-      case 2: {
-        return [place, conjugation["Future"][place] != null ? conjugation["Future"][place] : ""];
-      }
-      break;
-      default: {
-        return [place, ""];
-      }
-    }
-
+  @override
+  void initState() {
+    super.initState();
+    db = TranslationDatabase();
+    getConjugation();
   }
 
-  void changeConjugation(String place, String newConj) {
+  void getConjugation() async {
+    conjugation = await db.getConjugation(widget.name);
+    print("conjugation");
+    print(conjugation);
+    setState(() {});
+  }
+
+  List<dynamic> findConjugation(int place) {
+    switch (time) {
+      case 1:
+        {
+          return [
+            place,
+            conjugation["present"].length > 0 &&
+                    place < conjugation["present"].length
+                ? conjugation["present"][place]
+                : ""
+          ];
+        }
+        break;
+      case 2:
+        {
+          return [
+            place,
+            conjugation["future"].length > 0 &&
+                    place < conjugation["future"].length
+                ? conjugation["future"][place]
+                : ""
+          ];
+        }
+        break;
+      default:
+        {
+          return [place, ""];
+        }
+    }
+  }
+
+  void changeConjugation(int place, String newConj) {
     print(place);
     print(newConj);
-    switch(time) {
-      case 1: {
-        conjugation["Present"][place] = newConj.toLowerCase();
-      }
-      break;
-      case 2: {
-        conjugation["Future"][place] = newConj.toLowerCase();
-      }
-      break;
+    switch (time) {
+      case 1:
+        {
+          conjugation["present"][place] = newConj.toLowerCase();
+          db.changeTranslation(newConj.toLowerCase(),
+              "present" + (place + 1).toString(), widget.name);
+        }
+        break;
+      case 2:
+        {
+          conjugation["future"][place] = newConj.toLowerCase();
+          db.changeTranslation(newConj.toLowerCase(),
+              "future" + (place + 1).toString(), widget.name);
+        }
+        break;
     }
     setState(() {});
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -125,8 +156,7 @@ class TimesState extends State<Times> {
               setState(() {
                 time = value;
               });
-            }
-        ),
+            }),
         RadioListTile(
             title: Text("Future"),
             value: 2,
@@ -135,8 +165,7 @@ class TimesState extends State<Times> {
               setState(() {
                 time = value;
               });
-            }
-        ),
+            }),
         Container(
           padding: EdgeInsets.all(30.0),
           child: Column(
@@ -144,14 +173,14 @@ class TimesState extends State<Times> {
               Row(
                 children: <Widget>[
                   Time(
-                    conjugation: findConjugation("Je"),
+                    conjugation: findConjugation(0),
                     changeConjugation: changeConjugation,
                   ),
                   Padding(
                     padding: EdgeInsets.only(left: 20.0),
                     child: Time(
-                        conjugation: findConjugation("Nous"),
-                        changeConjugation: changeConjugation,
+                      conjugation: findConjugation(3),
+                      changeConjugation: changeConjugation,
                     ),
                   )
                 ],
@@ -159,14 +188,14 @@ class TimesState extends State<Times> {
               Row(
                 children: <Widget>[
                   Time(
-                      conjugation: findConjugation("Tu"),
-                      changeConjugation: changeConjugation,
+                    conjugation: findConjugation(1),
+                    changeConjugation: changeConjugation,
                   ),
                   Padding(
                     padding: EdgeInsets.only(left: 20.0),
                     child: Time(
-                        conjugation: findConjugation("Vous"),
-                        changeConjugation: changeConjugation,
+                      conjugation: findConjugation(4),
+                      changeConjugation: changeConjugation,
                     ),
                   )
                 ],
@@ -174,14 +203,14 @@ class TimesState extends State<Times> {
               Row(
                 children: <Widget>[
                   Time(
-                      conjugation: findConjugation("Il, elle, on"),
-                      changeConjugation: changeConjugation,
+                    conjugation: findConjugation(2),
+                    changeConjugation: changeConjugation,
                   ),
                   Padding(
                     padding: EdgeInsets.only(left: 20.0),
                     child: Time(
-                        conjugation: findConjugation("Ils, elles"),
-                        changeConjugation: changeConjugation,
+                      conjugation: findConjugation(5),
+                      changeConjugation: changeConjugation,
                     ),
                   )
                 ],
@@ -198,11 +227,8 @@ class Time extends StatefulWidget {
   final conjugation;
   final changeConjugation;
 
-  const Time({
-    Key key,
-    @required this.conjugation,
-    @required this.changeConjugation
-  })
+  const Time(
+      {Key key, @required this.conjugation, @required this.changeConjugation})
       : assert(conjugation != null),
         assert(changeConjugation != null),
         super(key: key);
@@ -239,27 +265,23 @@ class TimeState extends State<Time> {
         children: <Widget>[
           Container(
             width: 50.0,
-            child: Text(widget.conjugation[0]),
+            child: Text(type[widget.conjugation[0]]),
           ),
           Container(
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(5.0),
-                color: Colors.white
-            ),
+                borderRadius: BorderRadius.circular(5.0), color: Colors.white),
             padding: EdgeInsets.all(5.0),
             width: 100.0,
             child: TextField(
                 onChanged: (string) {
+                  print("change");
                   widget.changeConjugation(widget.conjugation[0], string);
                 },
                 controller: controller,
                 style: TextStyle(
                   color: Colors.blueGrey,
                 ),
-                decoration: const InputDecoration.collapsed(
-                  hintText: null
-                )
-            ),
+                decoration: const InputDecoration.collapsed(hintText: null)),
           )
         ],
       ),

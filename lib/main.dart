@@ -181,6 +181,8 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     if (language != "french" && filter.length > 0) {
       return true;
     } else {
+      db.changeTranslation(
+          word, language, translationDataTemp[index][language]);
       for (var i = 0; i < translationData.length; i++) {
         if (translationData[i][language] ==
             translationDataTemp[index][language]) {
