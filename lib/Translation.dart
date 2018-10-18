@@ -1,5 +1,14 @@
+import 'dart:async';
+
 import 'package:meta/meta.dart';
 import 'package:flutter/material.dart';
+import 'package:audio_recorder/audio_recorder.dart';
+import 'package:file/file.dart';
+import 'package:file/local.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io' as io;
+import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import 'package:flutter_tensoring/conjugation.dart';
 
@@ -12,12 +21,14 @@ class Translation extends StatefulWidget {
   final remove;
   final present;
   final future;
+  final LocalFileSystem localFileSystem;
 
-  const Translation({
+  Translation({
     Key key,
     @required this.spanish,
     @required this.french,
     @required this.verb,
+    localFileSystem,
     this.index,
     this.unfocus,
     this.present,
@@ -26,12 +37,8 @@ class Translation extends StatefulWidget {
   })  : assert(spanish != null),
         assert(french != null),
         assert(verb != null),
+        this.localFileSystem = localFileSystem ?? LocalFileSystem(),
         super(key: key);
-
-  Translation.fromJson1(Map json)
-      : spanish = json["spanish"],
-        french = json["french"],
-        verb = json["verb"] == 1 ? true : false;
 
   Map<String, dynamic> toMap1() {
     var map = Map<String, dynamic>();
@@ -40,27 +47,6 @@ class Translation extends StatefulWidget {
     map['verb'] = verb;
     return map;
   }
-
-  Translation.fromJson2(Map json)
-      : spanish = json["spanish"],
-        french = json["french"],
-        verb = json["verb"],
-        present = TimeObj(
-          je: json["present1"],
-          tu: json["present2"],
-          il: json["present3"],
-          nous: json["present4"],
-          vous: json["present5"],
-          ils: json["present6"],
-        ),
-        future = TimeObj(
-          je: json["future1"],
-          tu: json["future2"],
-          il: json["future3"],
-          nous: json["future4"],
-          vous: json["future5"],
-          ils: json["future6"],
-        );
 
   @override
   TranslationState createState() => new TranslationState();
@@ -74,10 +60,24 @@ class TranslationState extends State<Translation> {
   bool highlightSpanish = false;
   bool highlightFrench = false;
   Widget iconOpen = Container();
+  bool _isRecording = false;
+  bool _isPlaying = false;
+  Recording _recording = new Recording();
+  AudioPlayer audioPlayer = new AudioPlayer();
+  IconData iconLeft = Icons.play_circle_filled;
+  IconData iconRight = Icons.mic;
 
   @override
   void initState() {
     super.initState();
+    audioPlayer.completionHandler = () {
+      _isPlaying = false;
+      iconLeft = Icons.play_circle_filled;
+      iconRight = Icons.mic;
+      setState(() {
+
+      });
+    };
     print(widget.spanish);
     spanishController.text = widget.spanish;
     frenchController.text = widget.french;
@@ -130,6 +130,110 @@ class TranslationState extends State<Translation> {
       highlightFrench = true;
     }
     setState(() {});
+  }
+
+  void startRecording() async {
+    try {
+      if (await AudioRecorder.hasPermissions) {
+        print("user gave permisssion");
+        if (widget.spanish != null && widget.spanish != "") {
+          String path = widget.spanish;
+          if (!widget.spanish.contains('/')) {
+            io.Directory appDocDirectory =
+            await getApplicationDocumentsDirectory();
+            path = appDocDirectory.path + '/' + widget.spanish;
+          }
+          print("Start recording: $path");
+          await AudioRecorder.start(
+              path: path, audioOutputFormat: AudioOutputFormat.AAC);
+        } else {
+          await AudioRecorder.start();
+        }
+        bool isRecording = await AudioRecorder.isRecording;
+        setState(() {
+          _recording = new Recording(duration: new Duration(), path: "");
+          _isRecording = isRecording;
+        });
+      } else {
+        Scaffold.of(context).showSnackBar(
+            new SnackBar(content: new Text("You must accept permissions")));
+      }
+    } catch (e) {
+      print("error:");
+      print(e);
+    }
+  }
+
+  Future stopRecording() async {
+    var recording = await AudioRecorder.stop();
+    print("Stop recording: ${recording.path}");
+    bool isRecording = await AudioRecorder.isRecording;
+    File file = widget.localFileSystem.file(recording.path);
+    print("  File length: ${await file.length()}");
+    setState(() {
+      _recording = recording;
+      _isRecording = isRecording;
+    });
+  }
+
+  void onPressedIconLeft() async {
+    if (!_isRecording && !_isPlaying) {
+      var dir = await getApplicationDocumentsDirectory();
+      if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
+        int result = await audioPlayer.play('${dir.path}/${widget.spanish}.m4a', isLocal: true);
+        if (result == 1) {
+          setState(() {
+            _isPlaying = true;
+            iconLeft = Icons.pause;
+            iconRight = Icons.stop;
+          });
+        }
+      }
+    } else if (_isRecording && !_isPlaying) {
+      await stopRecording();
+      var dir = await getApplicationDocumentsDirectory();
+      if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
+        io.File('${dir.path}/${widget.spanish}.m4a').delete();
+      }
+      iconLeft = Icons.play_circle_filled;
+      iconRight = Icons.mic;
+    } else if (!_isRecording && _isPlaying) {
+      int result = await audioPlayer.pause();
+      if (result == 1) {
+        _isPlaying = false;
+        iconLeft = Icons.play_circle_filled;
+        iconRight = Icons.mic;
+      }
+    }
+    setState(() {
+
+    });
+  }
+
+  void onPressedIconRight() async {
+    if (!_isRecording && !_isPlaying) {
+      var dir = await getApplicationDocumentsDirectory();
+      if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
+        io.File('${dir.path}/${widget.spanish}.m4a').delete();
+      }
+      startRecording();
+      iconLeft = Icons.cancel;
+      iconRight = Icons.done;
+    } else if (_isRecording && !_isPlaying) {
+      stopRecording();
+      iconLeft = Icons.play_circle_filled;
+      iconRight = Icons.mic;
+    } else if (!_isRecording && _isPlaying) {
+      int result = await audioPlayer.stop();
+      if (result == 1) {
+        _isPlaying = false;
+        iconLeft = Icons.play_circle_filled;
+        iconRight = Icons.mic;
+      }
+    }
+    setState(() {
+
+    });
   }
 
   @override
@@ -197,7 +301,56 @@ class TranslationState extends State<Translation> {
                             ),
                           ]),
                     ),
-                    iconOpen
+                    Container(
+                      padding: EdgeInsets.only(left: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          Container(
+                              margin: EdgeInsets.all(5.0),
+                              height: 15.0,
+                              width: 15.0,
+                              child: iconOpen
+                          ),
+                          Row(
+                            children: <Widget>[
+                              Container(
+                                margin: EdgeInsets.all(5.0),
+                                height: 15.0,
+                                width: 15.0,
+                                child: IconButton(
+                                  iconSize: 15.0,
+                                    icon: Icon(
+                                      iconLeft,
+                                      color: Colors.blueGrey.withOpacity(0.5),
+                                    ),
+                                    padding: EdgeInsets.all(0.0),
+                                    onPressed: () async {
+                                      onPressedIconLeft();
+                                    },
+                                ),
+                              ),
+                              Container(
+                                margin: EdgeInsets.all(5.0),
+                                height: 15.0,
+                                width: 15.0,
+                                child: IconButton(
+                                  iconSize: 15.0,
+                                  icon: Icon(
+                                    iconRight,
+                                    color: Colors.blueGrey.withOpacity(0.5),
+                                  ),
+                                  padding: EdgeInsets.all(0.0),
+                                  onPressed: () {
+                                    onPressedIconRight();
+                                  },
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    )
                   ],
                 ))));
   }
@@ -214,23 +367,21 @@ class OpenVerb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: 1,
-      child: FlatButton(
-          padding: EdgeInsets.only(left: 10.0),
-          onPressed: () {
-            Navigator.of(context).push(PageRouteBuilder(
-                  opaque: false,
-                  pageBuilder: (BuildContext context, _, __) {
-                    return Conjugation(french: french, spanish: spanish);
-                  },
-                ));
-          },
-          child: Icon(
-            Icons.open_in_new,
-            color: Colors.blueGrey.withOpacity(0.5),
-          )),
-    );
+    return IconButton(
+      iconSize: 15.0,
+        padding: EdgeInsets.all(0.0),
+        onPressed: () {
+          Navigator.of(context).push(PageRouteBuilder(
+                opaque: false,
+                pageBuilder: (BuildContext context, _, __) {
+                  return Conjugation(french: french, spanish: spanish);
+                },
+              ));
+        },
+        icon: Icon(
+          Icons.open_in_new,
+          color: Colors.blueGrey.withOpacity(0.5),
+        ));
   }
 }
 

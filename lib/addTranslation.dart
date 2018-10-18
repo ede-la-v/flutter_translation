@@ -126,7 +126,7 @@ class AddState extends State<AddTranslation> {
 class NonVerb extends StatefulWidget {
   final onSubmit;
 
-  const NonVerb({
+  NonVerb({
     Key key,
     @required this.onSubmit,
   })  : assert(onSubmit != null),

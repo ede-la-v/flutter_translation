@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:throttle_debounce/throttle_debounce.dart';
+//import 'package:throttle_debounce/throttle_debounce.dart';
 
 import 'package:flutter_tensoring/addTranslation.dart';
 import 'package:flutter_tensoring/database.dart';
@@ -59,7 +59,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
       vsync: this,
     );
     reinitializeAnimatedList();
-    debouncer = new Debouncer(const Duration(milliseconds: 250), callback, []);
+    //debouncer = new Debouncer(const Duration(milliseconds: 250), callback, []);
   }
 
   init() async {
@@ -143,7 +143,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     return false;
   }
 
-  void callback(List args) {
+  void callback() {
     String text = searchController.text;
     print(text);
     setState(() {
@@ -168,7 +168,8 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
   }
 
   void _onChangeSearch(String text) {
-    debouncer.debounce();
+    //debouncer.debounce();
+    callback();
   }
 
   bool _unfocus(String language, int index, String word) {

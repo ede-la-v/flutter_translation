@@ -202,7 +202,7 @@ class Time extends StatefulWidget {
   final conjugation;
   final changeConjugation;
 
-  const Time(
+  Time(
       {Key key, @required this.conjugation, @required this.changeConjugation})
       : assert(conjugation != null),
         assert(changeConjugation != null),

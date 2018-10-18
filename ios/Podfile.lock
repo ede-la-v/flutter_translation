@@ -1,4 +1,8 @@
 PODS:
+  - audio_recorder (0.0.1):
+    - Flutter
+  - audioplayers (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - FMDB (2.7.2):
     - FMDB/standard (= 2.7.2)
@@ -12,32 +16,40 @@ PODS:
     - FMDB (~> 2.7.2)
 
 DEPENDENCIES:
-  - Flutter (from `.symlinks/flutter/ios`)
-  - path_provider (from `.symlinks/plugins/path_provider/ios`)
-  - shared_preferences (from `.symlinks/plugins/shared_preferences/ios`)
-  - sqflite (from `.symlinks/plugins/sqflite/ios`)
+  - audio_recorder (from `/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/audio_recorder-0.0.6/ios`)
+  - audioplayers (from `/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/audioplayers-0.7.8/ios`)
+  - Flutter (from `/Users/ericdelavarende/todo/flutter/bin/cache/artifacts/engine/ios`)
+  - path_provider (from `/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider-0.4.1/ios`)
+  - shared_preferences (from `/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences-0.4.3/ios`)
+  - sqflite (from `/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/sqflite-0.12.0/ios`)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
     - FMDB
 
 EXTERNAL SOURCES:
+  audio_recorder:
+    :path: "/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/audio_recorder-0.0.6/ios"
+  audioplayers:
+    :path: "/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/audioplayers-0.7.8/ios"
   Flutter:
-    :path: ".symlinks/flutter/ios"
+    :path: "/Users/ericdelavarende/todo/flutter/bin/cache/artifacts/engine/ios"
   path_provider:
-    :path: ".symlinks/plugins/path_provider/ios"
+    :path: "/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider-0.4.1/ios"
   shared_preferences:
-    :path: ".symlinks/plugins/shared_preferences/ios"
+    :path: "/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/shared_preferences-0.4.3/ios"
   sqflite:
-    :path: ".symlinks/plugins/sqflite/ios"
+    :path: "/Users/ericdelavarende/todo/flutter/.pub-cache/hosted/pub.dartlang.org/sqflite-0.12.0/ios"
 
 SPEC CHECKSUMS:
+  audio_recorder: d125819a2678d286d600364a2e72edbb1d729c04
+  audioplayers: def111f6a23e00d9d103563b07de5e44a727bd3c
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
   FMDB: 6198a90e7b6900cfc046e6bc0ef6ebb7be9236aa
   path_provider: 09407919825bfe3c2deae39453b7a5b44f467873
   shared_preferences: 5a1d487c427ee18fcd3ea1f2a131569481834b53
   sqflite: d1612813fa7db7c667bed9f1d1b508deffc56999
 
-PODFILE CHECKSUM: 1e5af4103afd21ca5ead147d7b81d06f494f51a2
+PODFILE CHECKSUM: 9ca6e68f7438e90bde47d53aa8fc15f78fbdc7ea
 
 COCOAPODS: 1.5.3
