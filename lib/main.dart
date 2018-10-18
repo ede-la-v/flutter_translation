@@ -260,12 +260,11 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                               fillColor: Colors.white,
                               filled: true,
                               hintText: hintText,
-                              hintStyle: TextStyle(fontSize: 15.0)),
+                              hintStyle: TextStyle(fontSize: 12.0)),
                         ),
-                        flex: 6,
                       ),
-                      Expanded(
-                        flex: 1,
+                      Container(
+                        width: 40.0,
                         child: FlatButton(
                           child: searchIcon,
                           onPressed: () {

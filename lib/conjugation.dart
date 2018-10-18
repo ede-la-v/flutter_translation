@@ -43,7 +43,7 @@ class ConjugationState extends State<Conjugation> {
                 Expanded(
                     child: Center(
                   child: Text(
-                    widget.spanish,
+                    widget.french,
                     style: TextStyle(
                         fontSize: 20.0,
                         fontWeight: FontWeight.w600,
@@ -55,7 +55,9 @@ class ConjugationState extends State<Conjugation> {
                 ),
               ],
             ),
-            Times(widget.spanish)
+            Expanded(
+              child: Times(widget.spanish),
+            )
           ],
         ),
       ),
@@ -92,6 +94,8 @@ class TimesState extends State<Times> {
   }
 
   List<dynamic> findConjugation(int place) {
+    print(place);
+    print(time);
     switch (time) {
       case 1:
         {
@@ -146,79 +150,50 @@ class TimesState extends State<Times> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        RadioListTile(
-            title: Text("Present"),
-            value: 1,
-            groupValue: time,
-            onChanged: (value) {
-              setState(() {
-                time = value;
-              });
-            }),
-        RadioListTile(
-            title: Text("Future"),
-            value: 2,
-            groupValue: time,
-            onChanged: (value) {
-              setState(() {
-                time = value;
-              });
-            }),
-        Container(
-          padding: EdgeInsets.all(30.0),
-          child: Column(
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Time(
-                    conjugation: findConjugation(0),
-                    changeConjugation: changeConjugation,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20.0),
-                    child: Time(
-                      conjugation: findConjugation(3),
-                      changeConjugation: changeConjugation,
-                    ),
-                  )
-                ],
-              ),
-              Row(
-                children: <Widget>[
-                  Time(
-                    conjugation: findConjugation(1),
-                    changeConjugation: changeConjugation,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20.0),
-                    child: Time(
-                      conjugation: findConjugation(4),
-                      changeConjugation: changeConjugation,
-                    ),
-                  )
-                ],
-              ),
-              Row(
-                children: <Widget>[
-                  Time(
-                    conjugation: findConjugation(2),
-                    changeConjugation: changeConjugation,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 20.0),
-                    child: Time(
-                      conjugation: findConjugation(5),
-                      changeConjugation: changeConjugation,
-                    ),
-                  )
-                ],
-              )
-            ],
+    return ListTileTheme(
+      style: ListTileStyle.drawer,
+      child: Column(
+        children: <Widget>[
+          Container(
+            height: 30.0,
+            child: RadioListTile(
+                title: Text("Present"),
+                value: 1,
+                groupValue: time,
+                onChanged: (value) {
+                  setState(() {
+                    time = value;
+                  });
+                }),
           ),
-        )
-      ],
+          Container(
+            height: 30.0,
+            child: RadioListTile(
+                title: Text("Future"),
+                value: 2,
+                groupValue: time,
+                onChanged: (value) {
+                  setState(() {
+                    time = value;
+                  });
+                }),
+          ),
+          Expanded(
+              child: Padding(
+            padding: EdgeInsets.only(left: 30.0, right: 30.0, top: 20.0),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: 6,
+              itemBuilder: (BuildContext context, int index) {
+                return Time(
+                  changeConjugation: changeConjugation,
+                  conjugation: findConjugation(index),
+                );
+              },
+            ),
+          ))
+        ],
+      ),
     );
   }
 }
@@ -242,8 +217,10 @@ class TimeState extends State<Time> {
 
   @override
   void initState() {
-    if (widget.conjugation != null) {
+    if (widget.conjugation != null && widget.conjugation[1] != null) {
       controller.text = widget.conjugation[1];
+    } else {
+      controller.text = "";
     }
 
     super.initState();
@@ -251,8 +228,11 @@ class TimeState extends State<Time> {
 
   @override
   void didUpdateWidget(Time oldWidget) {
-    if (widget.conjugation != null) {
+    print(widget.conjugation);
+    if (widget.conjugation != null && widget.conjugation[1] != null) {
       controller.text = widget.conjugation[1];
+    } else {
+      controller.text = "";
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -267,11 +247,11 @@ class TimeState extends State<Time> {
             width: 50.0,
             child: Text(type[widget.conjugation[0]]),
           ),
-          Container(
+          Expanded(
+              child: Container(
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(5.0), color: Colors.white),
             padding: EdgeInsets.all(5.0),
-            width: 100.0,
             child: TextField(
                 onChanged: (string) {
                   print("change");
@@ -282,7 +262,7 @@ class TimeState extends State<Time> {
                   color: Colors.blueGrey,
                 ),
                 decoration: const InputDecoration.collapsed(hintText: null)),
-          )
+          ))
         ],
       ),
     );
