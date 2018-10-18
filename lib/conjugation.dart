@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tensoring/database.dart';
+import 'package:meta/meta.dart';
+import 'package:audio_recorder/audio_recorder.dart';
+import 'package:file/file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io' as io;
+import 'package:audioplayers/audioplayers.dart';
+import 'dart:async';
+import 'package:file/local.dart';
 
 List type = ["Je", "Tu", "Il, elle, on", "Nous", "vous", "Ils, elles"];
 
@@ -188,6 +196,8 @@ class TimesState extends State<Times> {
                 return Time(
                   changeConjugation: changeConjugation,
                   conjugation: findConjugation(index),
+                  spanish: widget.name,
+                  time: time,
                 );
               },
             ),
@@ -201,11 +211,21 @@ class TimesState extends State<Times> {
 class Time extends StatefulWidget {
   final conjugation;
   final changeConjugation;
+  final spanish;
+  final time;
+  final LocalFileSystem localFileSystem;
 
   Time(
-      {Key key, @required this.conjugation, @required this.changeConjugation})
+      {Key key,
+        @required this.conjugation,
+        @required this.changeConjugation,
+        @required this.spanish,
+        @required this.time,
+        localFileSystem
+      })
       : assert(conjugation != null),
         assert(changeConjugation != null),
+        this.localFileSystem = localFileSystem ?? LocalFileSystem(),
         super(key: key);
 
   @override
@@ -214,9 +234,23 @@ class Time extends StatefulWidget {
 
 class TimeState extends State<Time> {
   TextEditingController controller = TextEditingController();
+  IconData iconLeft = Icons.play_circle_filled;
+  IconData iconRight = Icons.mic;
+  bool _isPlaying = false;
+  bool _isRecording = false;
+  Recording _recording = new Recording();
+  AudioPlayer audioPlayer = new AudioPlayer();
 
   @override
   void initState() {
+    audioPlayer.completionHandler = () {
+      _isPlaying = false;
+      iconLeft = Icons.play_circle_filled;
+      iconRight = Icons.mic;
+      setState(() {
+
+      });
+    };
     if (widget.conjugation != null && widget.conjugation[1] != null) {
       controller.text = widget.conjugation[1];
     } else {
@@ -235,6 +269,129 @@ class TimeState extends State<Time> {
       controller.text = "";
     }
     super.didUpdateWidget(oldWidget);
+  }
+
+  void startRecording() async {
+    try {
+      if (await AudioRecorder.hasPermissions) {
+        print("user gave permisssion");
+        String path = getPath();
+        if (path != null && path != "") {
+          if (!path.contains('/')) {
+            io.Directory appDocDirectory =
+            await getApplicationDocumentsDirectory();
+            path = appDocDirectory.path + '/' + path;
+          }
+          print("Start recording: $path");
+          await AudioRecorder.start(
+              path: path, audioOutputFormat: AudioOutputFormat.AAC);
+        } else {
+          await AudioRecorder.start();
+        }
+        bool isRecording = await AudioRecorder.isRecording;
+        setState(() {
+          _recording = new Recording(duration: new Duration(), path: "");
+          _isRecording = isRecording;
+        });
+      } else {
+        Scaffold.of(context).showSnackBar(
+            new SnackBar(content: new Text("You must accept permissions")));
+      }
+    } catch (e) {
+      print("error:");
+      print(e);
+    }
+  }
+
+  String getPath() {
+    switch (widget.time){
+      case 1:
+        {
+          return widget.spanish + "present" + widget.conjugation[0].toString();;
+        }
+        break;
+      case 2:
+        {
+          return widget.spanish + "future" + widget.conjugation[0].toString();
+        }
+        break;
+      default:
+        {
+          return widget.spanish + "other" + widget.conjugation[0].toString();
+        }
+    }
+  }
+
+  Future stopRecording() async {
+    var recording = await AudioRecorder.stop();
+    print("Stop recording: ${recording.path}");
+    bool isRecording = await AudioRecorder.isRecording;
+    File file = widget.localFileSystem.file(recording.path);
+    print("  File length: ${await file.length()}");
+    setState(() {
+      _recording = recording;
+      _isRecording = isRecording;
+    });
+  }
+
+  void onPressedIconLeft() async {
+    if (!_isRecording && !_isPlaying) {
+      var dir = await getApplicationDocumentsDirectory();
+      if (await io.File('${dir.path}/${getPath()}.m4a').exists()) {
+        int result = await audioPlayer.play('${dir.path}/${getPath()}.m4a', isLocal: true);
+        if (result == 1) {
+          setState(() {
+            _isPlaying = true;
+            iconLeft = Icons.pause;
+            iconRight = Icons.stop;
+          });
+        }
+      }
+    } else if (_isRecording && !_isPlaying) {
+      await stopRecording();
+      var dir = await getApplicationDocumentsDirectory();
+      if (await io.File('${dir.path}/${getPath()}.m4a').exists()) {
+        io.File('${dir.path}/${getPath()}.m4a').delete();
+      }
+      iconLeft = Icons.play_circle_filled;
+      iconRight = Icons.mic;
+    } else if (!_isRecording && _isPlaying) {
+      int result = await audioPlayer.pause();
+      if (result == 1) {
+        _isPlaying = false;
+        iconLeft = Icons.play_circle_filled;
+        iconRight = Icons.mic;
+      }
+    }
+    setState(() {
+
+    });
+  }
+
+  void onPressedIconRight() async {
+    if (!_isRecording && !_isPlaying) {
+      var dir = await getApplicationDocumentsDirectory();
+      if (await io.File('${dir.path}/${getPath()}.m4a').exists()) {
+        io.File('${dir.path}/${getPath()}.m4a').delete();
+      }
+      startRecording();
+      iconLeft = Icons.cancel;
+      iconRight = Icons.done;
+    } else if (_isRecording && !_isPlaying) {
+      stopRecording();
+      iconLeft = Icons.play_circle_filled;
+      iconRight = Icons.mic;
+    } else if (!_isRecording && _isPlaying) {
+      int result = await audioPlayer.stop();
+      if (result == 1) {
+        _isPlaying = false;
+        iconLeft = Icons.play_circle_filled;
+        iconRight = Icons.mic;
+      }
+    }
+    setState(() {
+
+    });
   }
 
   @override
@@ -262,7 +419,39 @@ class TimeState extends State<Time> {
                   color: Colors.blueGrey,
                 ),
                 decoration: const InputDecoration.collapsed(hintText: null)),
-          ))
+          )),
+          Container(
+            margin: EdgeInsets.all(5.0),
+            height: 15.0,
+            width: 15.0,
+            child: IconButton(
+              iconSize: 15.0,
+              icon: Icon(
+                iconLeft,
+                color: Colors.blueGrey.withOpacity(0.5),
+              ),
+              padding: EdgeInsets.all(0.0),
+              onPressed: () async {
+                onPressedIconLeft();
+              },
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(5.0),
+            height: 15.0,
+            width: 15.0,
+            child: IconButton(
+              iconSize: 15.0,
+              icon: Icon(
+                iconRight,
+                color: Colors.blueGrey.withOpacity(0.5),
+              ),
+              padding: EdgeInsets.all(0.0),
+              onPressed: () {
+                onPressedIconRight();
+              },
+            ),
+          ),
         ],
       ),
     );
