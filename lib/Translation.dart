@@ -65,18 +65,20 @@ class TranslationState extends State<Translation> {
   AudioPlayer audioPlayer = new AudioPlayer();
   IconData iconLeft = Icons.play_circle_filled;
   IconData iconRight = Icons.mic;
+  Color playColor = Colors.blueGrey.withOpacity(0.5);
 
   @override
   void initState() {
     super.initState();
     audioPlayer.completionHandler = () {
-      _isPlaying = false;
-      iconLeft = Icons.play_circle_filled;
-      iconRight = Icons.mic;
       setState(() {
-
+        _isPlaying = false;
+        iconLeft = Icons.play_circle_filled;
+        iconRight = Icons.mic;
+        playColor = Colors.blue;
       });
     };
+    initAudioPlayer();
     print(widget.spanish);
     spanishController.text = widget.spanish;
     frenchController.text = widget.french;
@@ -93,6 +95,7 @@ class TranslationState extends State<Translation> {
   @override
   void didUpdateWidget(translation) {
     super.didUpdateWidget(translation);
+    initAudioPlayer();
     spanishController.text = widget.spanish;
     frenchController.text = widget.french;
     if (widget.verb) {
@@ -102,6 +105,19 @@ class TranslationState extends State<Translation> {
       );
     } else {
       iconOpen = Container();
+    }
+  }
+
+  initAudioPlayer() async {
+    var dir = await getApplicationDocumentsDirectory();
+    if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
+      setState(() {
+        playColor = Colors.blue;
+      });
+    } else {
+      setState(() {
+        playColor = Colors.blueGrey.withOpacity(0.5);
+      });
     }
   }
 
@@ -183,6 +199,7 @@ class TranslationState extends State<Translation> {
         if (result == 1) {
           setState(() {
             _isPlaying = true;
+            playColor = Colors.blueGrey.withOpacity(0.5);
             iconLeft = Icons.pause;
             iconRight = Icons.stop;
           });
@@ -200,6 +217,7 @@ class TranslationState extends State<Translation> {
       int result = await audioPlayer.pause();
       if (result == 1) {
         _isPlaying = false;
+        playColor = Colors.blue;
         iconLeft = Icons.play_circle_filled;
         iconRight = Icons.mic;
       }
@@ -216,16 +234,19 @@ class TranslationState extends State<Translation> {
         io.File('${dir.path}/${widget.spanish}.m4a').delete();
       }
       startRecording();
+      playColor = Colors.blueGrey.withOpacity(0.5);
       iconLeft = Icons.cancel;
       iconRight = Icons.done;
     } else if (_isRecording && !_isPlaying) {
       stopRecording();
+      playColor = Colors.blue;
       iconLeft = Icons.play_circle_filled;
       iconRight = Icons.mic;
     } else if (!_isRecording && _isPlaying) {
       int result = await audioPlayer.stop();
       if (result == 1) {
         _isPlaying = false;
+        playColor = Colors.blue;
         iconLeft = Icons.play_circle_filled;
         iconRight = Icons.mic;
       }
@@ -306,22 +327,20 @@ class TranslationState extends State<Translation> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: <Widget>[
                           Container(
-                              margin: EdgeInsets.all(5.0),
-                              height: 15.0,
-                              width: 15.0,
+                              height: 25.0,
+                              width: 25.0,
                               child: iconOpen
                           ),
                           Row(
                             children: <Widget>[
                               Container(
-                                margin: EdgeInsets.all(5.0),
-                                height: 15.0,
-                                width: 15.0,
+                                height: 25.0,
+                                width: 25.0,
                                 child: IconButton(
-                                  iconSize: 15.0,
+                                  iconSize: 18.0,
                                     icon: Icon(
                                       iconLeft,
-                                      color: Colors.blueGrey.withOpacity(0.5),
+                                      color: playColor,
                                     ),
                                     padding: EdgeInsets.all(0.0),
                                     onPressed: () async {
@@ -330,11 +349,10 @@ class TranslationState extends State<Translation> {
                                 ),
                               ),
                               Container(
-                                margin: EdgeInsets.all(5.0),
-                                height: 15.0,
-                                width: 15.0,
+                                height: 25.0,
+                                width: 25.0,
                                 child: IconButton(
-                                  iconSize: 15.0,
+                                  iconSize: 18.0,
                                   icon: Icon(
                                     iconRight,
                                     color: Colors.blueGrey.withOpacity(0.5),
@@ -367,7 +385,7 @@ class OpenVerb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      iconSize: 15.0,
+      iconSize: 18.0,
         padding: EdgeInsets.all(0.0),
         onPressed: () {
           Navigator.of(context).push(PageRouteBuilder(

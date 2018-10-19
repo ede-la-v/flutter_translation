@@ -82,16 +82,33 @@ class Times extends StatefulWidget {
   TimesState createState() => new TimesState();
 }
 
-class TimesState extends State<Times> {
+class TimesState extends State<Times> with SingleTickerProviderStateMixin {
   int time = 1;
   Map conjugation = {"present": [], "future": []};
   TranslationDatabase db;
+  TabController _tabController;
+  List times = ["present", "future"];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(vsync: this, length: times.length);
+    _tabController.addListener(changeTime);
     db = TranslationDatabase();
     getConjugation();
+  }
+
+  @override
+  void didUpdateWidget(oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    print(_tabController.index); print("_tabController.index");
+  }
+
+  void changeTime() {
+    setState(() {
+      time = _tabController.index + 1;
+    });
   }
 
   void getConjugation() async {
@@ -153,57 +170,41 @@ class TimesState extends State<Times> {
         }
         break;
     }
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListTileTheme(
-      style: ListTileStyle.drawer,
-      child: Column(
-        children: <Widget>[
-          Container(
-            height: 30.0,
-            child: RadioListTile(
-                title: Text("Present"),
-                value: 1,
-                groupValue: time,
-                onChanged: (value) {
-                  setState(() {
-                    time = value;
-                  });
-                }),
+    return Column(
+      children: <Widget>[
+        TabBar(
+          controller: _tabController,
+          tabs: times.map((time) {
+            return Text(time);
+          }).toList(),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: times.map((time) {
+              return Padding(
+                    padding: EdgeInsets.only(left: 30.0, right: 30.0, top: 20.0),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: 6,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Time(
+                          changeConjugation: changeConjugation,
+                          conjugation: findConjugation(index),
+                          spanish: widget.name,
+                          time: time,
+                        );
+                      },
+                    ),
+                  );
+            }).toList(),
           ),
-          Container(
-            height: 30.0,
-            child: RadioListTile(
-                title: Text("Future"),
-                value: 2,
-                groupValue: time,
-                onChanged: (value) {
-                  setState(() {
-                    time = value;
-                  });
-                }),
-          ),
-          Expanded(
-              child: Padding(
-            padding: EdgeInsets.only(left: 30.0, right: 30.0, top: 20.0),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: 6,
-              itemBuilder: (BuildContext context, int index) {
-                return Time(
-                  changeConjugation: changeConjugation,
-                  conjugation: findConjugation(index),
-                  spanish: widget.name,
-                  time: time,
-                );
-              },
-            ),
-          ))
-        ],
-      ),
+        )
+      ],
     );
   }
 }
@@ -240,17 +241,20 @@ class TimeState extends State<Time> {
   bool _isRecording = false;
   Recording _recording = new Recording();
   AudioPlayer audioPlayer = new AudioPlayer();
+  Color playColor = Colors.blueGrey.withOpacity(0.5);
 
   @override
   void initState() {
     audioPlayer.completionHandler = () {
-      _isPlaying = false;
-      iconLeft = Icons.play_circle_filled;
-      iconRight = Icons.mic;
       setState(() {
-
+        _isPlaying = false;
+        iconLeft = Icons.play_circle_filled;
+        iconRight = Icons.mic;
+        playColor = Colors.blue;
       });
     };
+    
+    initAudioPlayer();
     if (widget.conjugation != null && widget.conjugation[1] != null) {
       controller.text = widget.conjugation[1];
     } else {
@@ -263,12 +267,26 @@ class TimeState extends State<Time> {
   @override
   void didUpdateWidget(Time oldWidget) {
     print(widget.conjugation);
+    initAudioPlayer();
     if (widget.conjugation != null && widget.conjugation[1] != null) {
       controller.text = widget.conjugation[1];
     } else {
       controller.text = "";
     }
     super.didUpdateWidget(oldWidget);
+  }
+
+  initAudioPlayer() async {
+    var dir = await getApplicationDocumentsDirectory();
+    if (await io.File('${dir.path}/${getPath()}.m4a').exists()) {
+      setState(() {
+        playColor = Colors.blue;
+      });
+    } else {
+      setState(() {
+        playColor = Colors.blueGrey.withOpacity(0.5);
+      });
+    }
   }
 
   void startRecording() async {
@@ -304,22 +322,7 @@ class TimeState extends State<Time> {
   }
 
   String getPath() {
-    switch (widget.time){
-      case 1:
-        {
-          return widget.spanish + "present" + widget.conjugation[0].toString();;
-        }
-        break;
-      case 2:
-        {
-          return widget.spanish + "future" + widget.conjugation[0].toString();
-        }
-        break;
-      default:
-        {
-          return widget.spanish + "other" + widget.conjugation[0].toString();
-        }
-    }
+    return widget.spanish + widget.time.toString().toLowerCase() + widget.conjugation[0].toString();
   }
 
   Future stopRecording() async {
@@ -342,6 +345,7 @@ class TimeState extends State<Time> {
         if (result == 1) {
           setState(() {
             _isPlaying = true;
+            playColor = Colors.blueGrey.withOpacity(0.5);
             iconLeft = Icons.pause;
             iconRight = Icons.stop;
           });
@@ -349,9 +353,11 @@ class TimeState extends State<Time> {
       }
     } else if (_isRecording && !_isPlaying) {
       await stopRecording();
+      print("stop recording");
       var dir = await getApplicationDocumentsDirectory();
       if (await io.File('${dir.path}/${getPath()}.m4a').exists()) {
         io.File('${dir.path}/${getPath()}.m4a').delete();
+        print("deleted recording");
       }
       iconLeft = Icons.play_circle_filled;
       iconRight = Icons.mic;
@@ -359,6 +365,7 @@ class TimeState extends State<Time> {
       int result = await audioPlayer.pause();
       if (result == 1) {
         _isPlaying = false;
+        playColor = Colors.blue;
         iconLeft = Icons.play_circle_filled;
         iconRight = Icons.mic;
       }
@@ -375,16 +382,19 @@ class TimeState extends State<Time> {
         io.File('${dir.path}/${getPath()}.m4a').delete();
       }
       startRecording();
+      playColor = Colors.blueGrey.withOpacity(0.5);
       iconLeft = Icons.cancel;
       iconRight = Icons.done;
     } else if (_isRecording && !_isPlaying) {
       stopRecording();
+      playColor = Colors.blue;
       iconLeft = Icons.play_circle_filled;
       iconRight = Icons.mic;
     } else if (!_isRecording && _isPlaying) {
       int result = await audioPlayer.stop();
       if (result == 1) {
         _isPlaying = false;
+        playColor = Colors.blue;
         iconLeft = Icons.play_circle_filled;
         iconRight = Icons.mic;
       }
@@ -411,7 +421,6 @@ class TimeState extends State<Time> {
             padding: EdgeInsets.all(5.0),
             child: TextField(
                 onChanged: (string) {
-                  print("change");
                   widget.changeConjugation(widget.conjugation[0], string);
                 },
                 controller: controller,
@@ -421,14 +430,14 @@ class TimeState extends State<Time> {
                 decoration: const InputDecoration.collapsed(hintText: null)),
           )),
           Container(
-            margin: EdgeInsets.all(5.0),
-            height: 15.0,
-            width: 15.0,
+            margin: EdgeInsets.only(left: 15.0),
+            height: 25.0,
+            width: 25.0,
             child: IconButton(
-              iconSize: 15.0,
+              iconSize: 19.0,
               icon: Icon(
                 iconLeft,
-                color: Colors.blueGrey.withOpacity(0.5),
+                color: playColor,
               ),
               padding: EdgeInsets.all(0.0),
               onPressed: () async {
@@ -437,11 +446,11 @@ class TimeState extends State<Time> {
             ),
           ),
           Container(
-            margin: EdgeInsets.all(5.0),
-            height: 15.0,
-            width: 15.0,
+            margin: EdgeInsets.only(left: 10.0),
+            height: 25.0,
+            width: 25.0,
             child: IconButton(
-              iconSize: 15.0,
+              iconSize: 18.0,
               icon: Icon(
                 iconRight,
                 color: Colors.blueGrey.withOpacity(0.5),
