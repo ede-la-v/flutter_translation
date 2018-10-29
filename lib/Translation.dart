@@ -11,6 +11,7 @@ import 'package:audioplayers/audioplayers.dart';
 
 import 'package:flutter_tensoring/conjugation.dart';
 import 'package:flutter_tensoring/assets/theme.dart';
+import 'package:flutter_tensoring/BlocProvider.dart';
 
 class Translation extends StatefulWidget {
   final String spanish;
@@ -259,11 +260,14 @@ class TranslationState extends State<Translation> {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = BlocProvider.of(context);
     return Dismissible(
         background: Container(color: Colors.red),
         key: Key(widget.spanish),
         onDismissed: (info) {
-          widget.remove(widget.index);
+          print("delete item");
+          bloc.deleteListItem.add(widget.index);
+          //widget.remove(widget.index);
         },
         child: Padding(
             padding: EdgeInsets.only(

@@ -19,8 +19,10 @@ class TranslationDatabase {
     if (_db != null) {
       return _db;
     }
+    print("salut");
     _db = await initDB();
-    await cleanUpDatabase(_db);
+    //await cleanUpDatabase(_db);
+    print(_db);
     return _db;
   }
 
@@ -35,10 +37,11 @@ class TranslationDatabase {
 
   Future cleanUpDatabase(Database db) async {
     print("delete movies");
-    await db.execute('''DROP TABLE IF EXISTS Movies''');
+    await db.execute('''DROP TABLE IF EXISTS Translations''');
     print("create transaltions");
     await db.execute('''CREATE TABLE IF NOT EXISTS Translations (
-        spanish TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        spanish TEXT UNIQUE,
         french TEXT, 
         present1 TEXT,
         present2 TEXT,
@@ -59,7 +62,8 @@ class TranslationDatabase {
     print("salut de la creation");
     await db.execute('''DROP TABLE IF EXISTS Translations''');
     await db.execute('''CREATE TABLE IF NOT EXISTS Translations (
-        spanish TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        spanish TEXT UNIQUE,
         french TEXT, 
         present1 TEXT,
         present2 TEXT,
@@ -78,10 +82,12 @@ class TranslationDatabase {
     print("Database was Created!");
   }
 
-  Future<int> addTranslation(Translation Translation) async {
+  Future<int> addTranslation(Map<String, dynamic> translation) async {
+    print(translation);
+    print("la");
     var dbClient = await db;
     try {
-      int res = await dbClient.insert("Translations", Translation.toMap1());
+      int res = await dbClient.insert("Translations", translation);
       print("Translation added $res");
       return res;
     } catch (e) {
@@ -93,7 +99,8 @@ class TranslationDatabase {
     var dbClient = await db;
     List resultFinal;
     var results = await dbClient
-        .rawQuery('SELECT spanish, french, verb FROM Translations');
+        .rawQuery('SELECT spanish, french, verb FROM Translations ORDER BY id DESC');
+    print(results);
     resultFinal = results.map((translation) {
       return {
         "spanish": translation["spanish"],

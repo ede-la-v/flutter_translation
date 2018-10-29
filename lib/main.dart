@@ -42,16 +42,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
   );
   AnimationController _controller;
   AnimationController _controllerList;
-  Animation<double> numberList = Tween(
-    begin: 1.0,
-    end: 1 + .0,
-  ).animate(CurvedAnimation(
-      parent: null,
-      curve: Interval(
-        0.0,
-        0.4,
-        curve: Curves.linear,
-      )));
+  Animation<double> numberList;
   var debouncer;
 
 
@@ -59,7 +50,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     debugPrint("heloooooo");
-    init();
     //translationDataTemp = translationData.where((test) => true).toList();
     //print(translationDataTemp);
     _focus.addListener(_onFocusChange);
@@ -71,6 +61,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 2000),
       vsync: this,
     );
+    init();
     //reinitializeAnimatedList(0);
     //debouncer = new Debouncer(const Duration(milliseconds: 250), callback, []);
   }
@@ -95,10 +86,10 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
   Future<List> listTemp(Stream<List> stream) async {
     List listTemp;
     await for (var list in stream) {
-      print("new list");
+      print("new list temp");
       listTemp = list;
+      reinitializeAnimatedList(listTemp.length);
     }
-    reinitializeAnimatedList(listTemp.length);
     return listTemp;
   }
 
@@ -121,7 +112,8 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
       }
   }
 
-  reinitializeAnimatedList(length) {
+  reinitializeAnimatedList(int length) {
+    print(length);
     numberList = Tween(
       begin: 1.0,
       end: length + .0,
@@ -223,31 +215,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     }
   }*/
 
-  /*void _removeItem(index) {
-    db.deleteTranslation(translationDataTemp[index]["spanish"]);
-    print(translationData);
-    translationData = translationData
-        .where((translation) =>
-            translation["spanish"] != translationDataTemp[index]["spanish"])
-        .toList();
-    print(translationData);
-    setState(() {
-      translationDataTemp = translationData
-          .where((translation) => _filter(translation, searchController.text))
-          .toList();
-      numberList = Tween(
-        begin: 1.0,
-        end: translationDataTemp.length + .0,
-      ).animate(CurvedAnimation(
-          parent: _controllerList,
-          curve: Interval(
-            0.0,
-            0.4,
-            curve: Curves.linear,
-          )));
-    });
-  }*/
-
   @override
   Widget build(BuildContext context) {
     final bloc = BlocProvider.of(context);
@@ -315,9 +282,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                             stream: BlocProvider.of(context).translationDataTemp,
                             initialData: [],
                             builder: (context, snapshot) {
-                              print("snapshot");
-                              print(snapshot);
-                              print(numberList);
                               return ListView.builder(
                                   itemCount: snapshot == null ||
                                snapshot.data == null ||
@@ -331,7 +295,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                                     //remove: _removeItem,
                                     spanish: snapshot == null ? "" : snapshot.data[index]["spanish"],
                                     french: snapshot == null ? "" : snapshot.data[index]["french"],
-                                    verb: snapshot == null ? "" : snapshot.data[index]["verb"],
+                                    verb: snapshot == null ? false : snapshot.data[index]["verb"],
                                   );
                                 });
                             },
@@ -348,25 +312,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
           Navigator.of(context).push(PageRouteBuilder(
                 opaque: false,
                 pageBuilder: (BuildContext context, _, __) {
-                  return AddTranslation(
-                      onSubmit: (String spanish, String french, bool verb) {
-                        print(spanish);
-                        print(french);
-                        print(verb);
-                        /*db.addTranslation(Translation(
-                            spanish: spanish, french: french, verb: verb));
-                        translationData.insert(0, {
-                          "spanish": spanish,
-                          "french": french,
-                          "verb": verb
-                        });
-                        setState(() {
-                          translationDataTemp =
-                              translationData.where((test) => true).toList();
-                        });
-                        reinitializeAnimatedList();*/
-                      },
-                      controller: _controller);
+                  return AddTranslation(controller: _controller);
                 },
               ));
         },

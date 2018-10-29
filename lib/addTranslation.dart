@@ -2,19 +2,17 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter_tensoring/assets/theme.dart';
+import 'package:flutter_tensoring/BlocProvider.dart';
 
 class AddTranslation extends StatefulWidget {
-  final onSubmit;
   final AnimationController controller;
   final Animation<EdgeInsets> movement;
   final Animation<double> opacity;
 
   AddTranslation({
     Key key,
-    @required this.onSubmit,
     @required this.controller
-  })  : assert(onSubmit != null),
-        opacity = Tween(
+  })  : opacity = Tween(
           begin: 0.0,
           end: 1.0,
         ).animate(CurvedAnimation(
@@ -114,7 +112,7 @@ class AddState extends State<AddTranslation> {
                       ),
                     ],
                   ),
-                  NonVerb(onSubmit: widget.onSubmit,)
+                  NonVerb()
                 ],
               ),
             ),
@@ -126,13 +124,10 @@ class AddState extends State<AddTranslation> {
 }
 
 class NonVerb extends StatefulWidget {
-  final onSubmit;
 
   NonVerb({
     Key key,
-    @required this.onSubmit,
-  })  : assert(onSubmit != null),
-        super(key: key);
+  })  : super(key: key);
 
   @override
   NonVerbState createState() => new NonVerbState();
@@ -164,6 +159,7 @@ class NonVerbState extends State<NonVerb> {
 
   @override
   Widget build(BuildContext context) {
+    final bloc = BlocProvider.of(context);
     return Form(
       key: _formKey,
       autovalidate: true,
@@ -216,23 +212,17 @@ class NonVerbState extends State<NonVerb> {
                   _focusSpanish.unfocus();
                   print("ok je suis ici");
                   if (_formKey.currentState.validate()) {
-                    Scaffold.of(context)
-                        .showSnackBar(SnackBar(content: Text('Processing Data')));
-
+                    var spanish = spanishController.text[0].toUpperCase() +
+                        spanishController.text.substring(1);
+                    var french = frenchController.text[0].toUpperCase() +
+                        frenchController.text.substring(1);
+                    bloc.addListItem.add({
+                      "spanish": spanish,
+                      "french": french,
+                      "verb": verb
+                    });
+                    Navigator.of(context).pop();
                   }
-                  print('widget.onsubm,it'+widget.onSubmit.toString());
-                  var spanish = spanishController.text[0].toUpperCase() +
-                      spanishController.text.substring(1);
-                  var french = frenchController.text[0].toUpperCase() +
-                                frenchController.text.substring(1);
-                  print("verb");
-                  print(verb);
-                  widget.onSubmit(
-                      spanish,
-                      french,
-                      verb
-                  );
-                  Navigator.of(context).pop();
                 },
                 child: Text('Submit'),
               ),
