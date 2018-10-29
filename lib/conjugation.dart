@@ -9,6 +9,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 import 'package:file/local.dart';
 
+import 'package:flutter_tensoring/assets/theme.dart';
+
 List type = ["Je", "Tu", "Il, elle, on", "Nous", "vous", "Ils, elles"];
 
 class Conjugation extends StatefulWidget {
@@ -34,10 +36,10 @@ class ConjugationState extends State<Conjugation> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.withOpacity(0.5),
-      body: Container(
+      body: Card(
         margin:
             EdgeInsets.only(left: 15.0, right: 15.0, bottom: 15.0, top: 60.0),
-        color: Colors.blueGrey[100],
+        color: Colors.white,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -55,7 +57,8 @@ class ConjugationState extends State<Conjugation> {
                     style: TextStyle(
                         fontSize: 20.0,
                         fontWeight: FontWeight.w600,
-                        color: Colors.blueGrey[700]),
+                        //color: Colors.blueGrey[700]
+                    ),
                   ),
                 )),
                 Container(
@@ -241,7 +244,7 @@ class TimeState extends State<Time> {
   bool _isRecording = false;
   Recording _recording = new Recording();
   AudioPlayer audioPlayer = new AudioPlayer();
-  Color playColor = Colors.blueGrey.withOpacity(0.5);
+  Color playColor = appColors["disabled"];
 
   @override
   void initState() {
@@ -250,10 +253,10 @@ class TimeState extends State<Time> {
         _isPlaying = false;
         iconLeft = Icons.play_circle_filled;
         iconRight = Icons.mic;
-        playColor = Colors.blue;
+        playColor = appColors["clickable"];
       });
     };
-    
+
     initAudioPlayer();
     if (widget.conjugation != null && widget.conjugation[1] != null) {
       controller.text = widget.conjugation[1];

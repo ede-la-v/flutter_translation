@@ -10,6 +10,7 @@ import 'dart:io' as io;
 import 'package:audioplayers/audioplayers.dart';
 
 import 'package:flutter_tensoring/conjugation.dart';
+import 'package:flutter_tensoring/assets/theme.dart';
 
 class Translation extends StatefulWidget {
   final String spanish;
@@ -265,111 +266,118 @@ class TranslationState extends State<Translation> {
           widget.remove(widget.index);
         },
         child: Padding(
-            padding: EdgeInsets.all(10.0),
-            child: Container(
-                padding: EdgeInsets.all(10.0),
-                color: Colors.white,
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      flex: 6,
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Container(
-                              padding: EdgeInsets.only(bottom: 5.0),
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border(
-                                      bottom:
-                                          BorderSide(color: Colors.blueGrey))),
-                              child: TextField(
-                                  focusNode: _focusSpanish,
-                                  controller: spanishController,
+            padding: EdgeInsets.only(
+                left: 20.0,
+                right: 20.0,
+                top: 10.0,
+                bottom: 10.0
+            ),
+            child: Card(
+              color: appColors["card"],
+              elevation: 5.0,
+              child: Container(
+                  padding: EdgeInsets.all(10.0),
+                  //color: Colors.white,
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        flex: 6,
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.only(bottom: 5.0),
+                                decoration: BoxDecoration(
+                                    border: Border(
+                                        bottom:
+                                            BorderSide(color: Colors.blueGrey))),
+                                child: TextField(
+                                    focusNode: _focusSpanish,
+                                    controller: spanishController,
+                                    decoration: InputDecoration.collapsed(
+                                      hintText: null,
+                                      fillColor:
+                                          Colors.amberAccent.withOpacity(0.3),
+                                      filled: highlightSpanish,
+                                    ),
+                                    //keyboardType: TextInputType.multiline,
+                                    maxLines: null,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: Colors.blueGrey,
+                                        fontWeight: FontWeight.w500)),
+                              ),
+                              Container(
+                                padding: EdgeInsets.only(top: 5.0),
+                                child: TextField(
+                                  focusNode: _focusFrench,
+                                  controller: frenchController,
                                   decoration: InputDecoration.collapsed(
                                     hintText: null,
                                     fillColor:
                                         Colors.amberAccent.withOpacity(0.3),
-                                    filled: highlightSpanish,
+                                    filled: highlightFrench,
                                   ),
                                   //keyboardType: TextInputType.multiline,
                                   maxLines: null,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                       color: Colors.blueGrey,
-                                      fontWeight: FontWeight.w500)),
-                            ),
-                            Container(
-                              padding: EdgeInsets.only(top: 5.0),
-                              color: Colors.white,
-                              child: TextField(
-                                focusNode: _focusFrench,
-                                controller: frenchController,
-                                decoration: InputDecoration.collapsed(
-                                  hintText: null,
-                                  fillColor:
-                                      Colors.amberAccent.withOpacity(0.3),
-                                  filled: highlightFrench,
+                                      fontStyle: FontStyle.italic),
                                 ),
-                                //keyboardType: TextInputType.multiline,
-                                maxLines: null,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    color: Colors.blueGrey,
-                                    fontStyle: FontStyle.italic),
                               ),
-                            ),
-                          ]),
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(left: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: <Widget>[
-                          Container(
-                              height: 25.0,
-                              width: 25.0,
-                              child: iconOpen
-                          ),
-                          Row(
-                            children: <Widget>[
-                              Container(
+                            ]),
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(left: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
                                 height: 25.0,
                                 width: 25.0,
-                                child: IconButton(
-                                  iconSize: 18.0,
+                                child: iconOpen
+                            ),
+                            Row(
+                              children: <Widget>[
+                                Container(
+                                  height: 25.0,
+                                  width: 25.0,
+                                  child: IconButton(
+                                    iconSize: 18.0,
+                                      icon: Icon(
+                                        iconLeft,
+                                        color: playColor,
+                                      ),
+                                      padding: EdgeInsets.all(0.0),
+                                      onPressed: () async {
+                                        onPressedIconLeft();
+                                      },
+                                  ),
+                                ),
+                                Container(
+                                  height: 25.0,
+                                  width: 25.0,
+                                  child: IconButton(
+                                    iconSize: 18.0,
                                     icon: Icon(
-                                      iconLeft,
-                                      color: playColor,
+                                      iconRight,
+                                      color: Colors.blueGrey.withOpacity(0.5),
                                     ),
                                     padding: EdgeInsets.all(0.0),
-                                    onPressed: () async {
-                                      onPressedIconLeft();
+                                    onPressed: () {
+                                      onPressedIconRight();
                                     },
-                                ),
-                              ),
-                              Container(
-                                height: 25.0,
-                                width: 25.0,
-                                child: IconButton(
-                                  iconSize: 18.0,
-                                  icon: Icon(
-                                    iconRight,
-                                    color: Colors.blueGrey.withOpacity(0.5),
                                   ),
-                                  padding: EdgeInsets.all(0.0),
-                                  onPressed: () {
-                                    onPressedIconRight();
-                                  },
                                 ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    )
-                  ],
-                ))));
+                              ],
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  )),
+            )));
   }
 }
 

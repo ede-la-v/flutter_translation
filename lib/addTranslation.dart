@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter_tensoring/assets/theme.dart';
+
 class AddTranslation extends StatefulWidget {
   final onSubmit;
   final AnimationController controller;
@@ -70,9 +72,9 @@ class AddState extends State<AddTranslation> {
           opacity: widget.opacity.value,
           child: Scaffold(
             backgroundColor: Colors.grey.withOpacity(0.5),
-            body: Container(
+            body: Card(
               margin: widget.movement.value,
-              color: Colors.blueGrey[100],
+              color: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
@@ -90,7 +92,7 @@ class AddState extends State<AddTranslation> {
                               style: TextStyle(
                                   fontSize: 20.0,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.blueGrey[700]
+                                  //color: Colors.blueGrey[700]
                               ),
                             ),
                           )
