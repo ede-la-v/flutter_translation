@@ -61,7 +61,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 2000),
       vsync: this,
     );
-    init();
     //reinitializeAnimatedList(0);
     //debouncer = new Debouncer(const Duration(milliseconds: 250), callback, []);
   }
@@ -72,10 +71,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     listTemp(BlocProvider.of(context).translationDataTemp);
   }
 
-  init() async {
-    reinitializeAnimatedList(1);
-  }
-
   @override
   void dispose() {
     _controller?.dispose();
@@ -83,14 +78,11 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Future<List> listTemp(Stream<List> stream) async {
-    List listTemp;
+  void listTemp(Stream<List> stream) async {
     await for (var list in stream) {
       print("new list temp");
-      listTemp = list;
-      reinitializeAnimatedList(listTemp.length);
+      reinitializeAnimatedList(list.length);
     }
-    return listTemp;
   }
 
   Future _startAnimation() async {
@@ -113,7 +105,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
   }
 
   reinitializeAnimatedList(int length) {
-    print(length);
     numberList = Tween(
       begin: 1.0,
       end: length + .0,
@@ -128,58 +119,15 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
   }
 
   void _onFocusChange() {
+    print("focus change");
     if (searchController.text == "") {
-      if (_focus.hasFocus) {
-        setState(() {
-          searchIcon = Icon(
-            Icons.search,
-            //color: Colors.blueGrey.withOpacity(1.0),
-          );
-          hintText = "";
-        });
-      } else {
-        setState(() {
-          searchIcon = Icon(
-            Icons.search,
-            //color: Colors.blueGrey.withOpacity(0.5),
-          );
-          hintText = "Chercher un mot, une expression ou un verbe";
-        });
-      }
+        BlocProvider.of(context).onFocusChange.add(_focus.hasFocus);
     }
-  }
-
-  bool _filter(translation, text) {
-    var tempText = text.toLowerCase().trim();
-    var tempSpanish = translation["spanish"].toLowerCase().trim();
-    var tempFrench = translation["french"].toLowerCase().trim();
-    if (tempFrench.toString().contains(tempText)) {
-      return true;
-    }
-    if (tempSpanish.toString().contains(tempText)) {
-      return true;
-    }
-    return false;
   }
 
   void callback() {
     String text = searchController.text;
     BlocProvider.of(context).queryChange.add(text);
-    print(text);
-    setState(() {
-      if (text != "") {
-        searchIcon = Icon(
-          Icons.close,
-          //color: Colors.red,
-          size: 18.0,
-        );
-      } else {
-        searchIcon = Icon(
-          Icons.search,
-          //color: Colors.blueGrey.withOpacity(1.0),
-        );
-      }
-    });
   }
 
   void _onChangeSearch(String text) {
@@ -240,46 +188,55 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                   ),
                   padding: EdgeInsets.all(10.0),
                   height: 40.0,
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: (yo) {
-                            _onChangeSearch(yo);
-                          },
-                          focusNode: _focus,
-                          decoration: InputDecoration.collapsed(
-                              fillColor: Colors.transparent,
-                              filled: true,
-                              hintText: hintText,
-                              hintStyle: TextStyle(fontSize: 12.0)),
-                        ),
-                      ),
-                      Container(
-                        width: 40.0,
-                        child: FlatButton(
-                          child: searchIcon,
-                          onPressed: () {
-                            setState(() {
-                              searchController.text = "";
-                              searchIcon = Icon(
-                                Icons.search,
-                                //color: Colors.blueGrey.withOpacity(1.0),
-                              );
-                              _onChangeSearch("");
-                            });
-                          },
-                        ),
-                      )
-                    ],
+                  child: StreamBuilder(
+                    stream: bloc.searchBarState,
+                    initialData: {
+                      "icon": Icons.search,
+                      "color": appColors["disabled"],
+                      "text": "Chercher un mot, une expression ou un verbe"
+                    },
+                    builder: (context, snapshot) {
+                      print(snapshot.data);
+                      return Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: TextField(
+                              controller: searchController,
+                              onChanged: (yo) {
+                                _onChangeSearch(yo);
+                              },
+                              focusNode: _focus,
+                              decoration: InputDecoration.collapsed(
+                                  fillColor: Colors.transparent,
+                                  filled: true,
+                                  hintText: snapshot.data["text"],
+                                  hintStyle: TextStyle(fontSize: 12.0)),
+                            ),
+                          ),
+                          Container(
+                            width: 40.0,
+                            child: FlatButton(
+                              child: Icon(
+                                  snapshot.data["icon"],
+                                  color: snapshot.data["color"],
+                              ),
+                              onPressed: () {
+                                bloc.queryChange.add(false);
+                                searchController.text = "";
+                                FocusScope.of(context).requestFocus(new FocusNode());
+                              },
+                            ),
+                          )
+                        ],
+                      );
+                    },
                   )),
               Expanded(
                   child: AnimatedBuilder(
                         animation: _controllerList,
                         builder: (BuildContext context, Widget child) {
                           return StreamBuilder<List>(
-                            stream: BlocProvider.of(context).translationDataTemp,
+                            stream: bloc.translationDataTemp,
                             initialData: [],
                             builder: (context, snapshot) {
                               return ListView.builder(
@@ -292,7 +249,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                                   return Translation(
                                     index: index,
                                     //unfocus: _unfocus,
-                                    //remove: _removeItem,
                                     spanish: snapshot == null ? "" : snapshot.data[index]["spanish"],
                                     french: snapshot == null ? "" : snapshot.data[index]["french"],
                                     verb: snapshot == null ? false : snapshot.data[index]["verb"],

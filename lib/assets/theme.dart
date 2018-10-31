@@ -5,5 +5,6 @@ final Map appColors = {
   "searchBar": ThemeData.light().highlightColor,
   "card": Colors.grey[100],
   "icon": Colors.blueGrey.withOpacity(0.5),
-  "disabled": ThemeData.light().disabledColor
+  "disabled": ThemeData.light().disabledColor,
+  "cancel": Colors.red
 };
