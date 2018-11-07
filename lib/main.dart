@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-//import 'package:throttle_debounce/throttle_debounce.dart';
 
-import 'package:flutter_tensoring/addTranslation.dart';
-import 'package:flutter_tensoring/database.dart';
+import 'package:flutter_tensoring/pages/addTranslation/addTranslation.dart';
 import 'package:flutter_tensoring/Translation.dart';
 import 'package:flutter_tensoring/assets/theme.dart';
 import 'package:flutter_tensoring/BlocProvider.dart';
@@ -30,29 +28,17 @@ class Dictionary extends StatefulWidget {
 }
 
 class DictState extends State<Dictionary> with TickerProviderStateMixin {
-  List translationData = [];
-  //List translationDataTemp = [];
-  double iconOpacity = 0.5;
-  String hintText = "Chercher un mot, une expression ou un verbe";
   FocusNode _focus = FocusNode();
-  TextEditingController searchController = TextEditingController();
-  Widget searchIcon = Icon(
-    Icons.search,
-    //color: Colors.blueGrey.withOpacity(0.5),
-  );
   AnimationController _controller;
   AnimationController _controllerList;
   Animation<double> numberList;
-  var debouncer;
+  TextEditingController searchBarController = TextEditingController();
 
 
   @override
   void initState() {
     super.initState();
-    debugPrint("heloooooo");
-    //translationDataTemp = translationData.where((test) => true).toList();
-    //print(translationDataTemp);
-    _focus.addListener(_onFocusChange);
+    _focus.addListener(_onFocusChangeSearchBar);
     _controller = AnimationController(
       duration: Duration(milliseconds: 1000),
       vsync: this,
@@ -61,14 +47,13 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
       duration: Duration(milliseconds: 2000),
       vsync: this,
     );
-    //reinitializeAnimatedList(0);
-    //debouncer = new Debouncer(const Duration(milliseconds: 250), callback, []);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    listTemp(BlocProvider.of(context).translationDataTemp);
+    //set listener of stream
+    newListTempEvent(BlocProvider.of1(context).translationDataTemp);
   }
 
   @override
@@ -78,15 +63,14 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void listTemp(Stream<List> stream) async {
+  void newListTempEvent(Stream<List> stream) async {
+    //enters in for loop every time a new element is added to the stream
     await for (var list in stream) {
-      print("new list temp");
       reinitializeAnimatedList(list.length);
     }
   }
 
-  Future _startAnimation() async {
-    debugPrint("heloooooo");
+  Future _startAnimationModal() async {
     _controller.value = 0.0;
     try {
       await _controller.forward().orCancel;
@@ -118,54 +102,20 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
     _startAnimationList();
   }
 
-  void _onFocusChange() {
-    print("focus change");
-    if (searchController.text == "") {
-        BlocProvider.of(context).onFocusChange.add(_focus.hasFocus);
+  void _onFocusChangeSearchBar() {
+    if (searchBarController.text == "") {
+      BlocProvider.of1(context).onFocusChange.add(_focus.hasFocus);
     }
-  }
-
-  void callback() {
-    String text = searchController.text;
-    BlocProvider.of(context).queryChange.add(text);
   }
 
   void _onChangeSearch(String text) {
-    //debouncer.debounce();
-    callback();
+    BlocProvider.of1(context).queryChange.add(text);
+    BlocProvider.of2(context).newConjugations.add("test");
   }
-
-  /*bool _unfocus(String language, int index, String word) {
-    print(language);
-    print(index);
-    print(word);
-    print(translationData);
-    var filter =
-        translationData.where((translation) => translation[language] == word);
-    if (language != "french" && filter.length > 0) {
-      return true;
-    } else {
-      db.changeTranslation(
-          word, language, translationDataTemp[index][language]);
-      for (var i = 0; i < translationData.length; i++) {
-        if (translationData[i][language] ==
-            translationDataTemp[index][language]) {
-          translationData[i][language] = word;
-        }
-      }
-      setState(() {
-        translationDataTemp = translationData
-            .where((translation) => _filter(translation, searchController.text))
-            .toList();
-      });
-      print(translationData);
-      return false;
-    }
-  }*/
 
   @override
   Widget build(BuildContext context) {
-    final bloc = BlocProvider.of(context);
+    final bloc = BlocProvider.of1(context);
     return Scaffold(
       appBar: AppBar(
         title: Text("Ultimas Palabras"),
@@ -201,10 +151,8 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                         children: <Widget>[
                           Expanded(
                             child: TextField(
-                              controller: searchController,
-                              onChanged: (yo) {
-                                _onChangeSearch(yo);
-                              },
+                              controller: searchBarController,
+                              onChanged:  _onChangeSearch,
                               focusNode: _focus,
                               decoration: InputDecoration.collapsed(
                                   fillColor: Colors.transparent,
@@ -221,8 +169,8 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                                   color: snapshot.data["color"],
                               ),
                               onPressed: () {
+                                searchBarController.text = "";
                                 bloc.queryChange.add(false);
-                                searchController.text = "";
                                 FocusScope.of(context).requestFocus(new FocusNode());
                               },
                             ),
@@ -248,7 +196,6 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
                                 itemBuilder: (BuildContext context, int index) {
                                   return Translation(
                                     index: index,
-                                    //unfocus: _unfocus,
                                     spanish: snapshot == null ? "" : snapshot.data[index]["spanish"],
                                     french: snapshot == null ? "" : snapshot.data[index]["french"],
                                     verb: snapshot == null ? false : snapshot.data[index]["verb"],
@@ -264,7 +211,7 @@ class DictState extends State<Dictionary> with TickerProviderStateMixin {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          _startAnimation();
+          _startAnimationModal();
           Navigator.of(context).push(PageRouteBuilder(
                 opaque: false,
                 pageBuilder: (BuildContext context, _, __) {

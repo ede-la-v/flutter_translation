@@ -3,10 +3,10 @@ import 'package:rxdart/subjects.dart';
 import 'package:stream_transform/stream_transform.dart';
 import 'dart:async';
 
-import 'package:flutter_tensoring/database.dart';
+import 'package:flutter_tensoring/services/database.dart';
 import 'package:flutter_tensoring/assets/theme.dart';
 
-class Bloc {
+class BlocDict {
   TranslationDatabase db;
   List translationData;
   String query;
@@ -24,7 +24,7 @@ class Bloc {
   final StreamController _onFocusChange = StreamController();
 
 
-  Bloc() {
+  BlocDict() {
     this.query = "";
     _initData();
     _initListeners();
@@ -46,7 +46,6 @@ class Bloc {
         _updateListTemp(query);
         this.query = query;
         if (query == "") {
-          print("delete text");
           _searchBarState.add({
             "icon": Icons.search,
             "color": appColors["clickable"],
@@ -89,21 +88,19 @@ class Bloc {
     });
 
     _onFocusChange.stream.listen((focus) {
-      print("focus");
-      print(focus);
-      if (focus) {
-        _searchBarState.add({
-          "icon": Icons.search,
-          "color": appColors["clickable"],
-          "text": ""
-        });
-      } else {
-        _searchBarState.add({
-          "icon": Icons.search,
-          "color": appColors["disabled"],
-          "text": "Chercher un mot, une expression ou un verbe"
-        });
-      }
+        if (focus) {
+          _searchBarState.add({
+            "icon": Icons.search,
+            "color": appColors["clickable"],
+            "text": ""
+          });
+        } else {
+          _searchBarState.add({
+            "icon": Icons.search,
+            "color": appColors["disabled"],
+            "text": "Chercher un mot, une expression ou un verbe"
+          });
+        }
     });
 
   }
@@ -132,6 +129,35 @@ class Bloc {
   void _updateListTemp(query) {
     _translationDataTemp.add(translationData
         .where((translation) => _filter(translation, query))
-        .toList());
+        .toList()
+    );
+  }
+
+  Future<bool> onTranslationChange(String language, int index, String word) async {
+    var lastTempList = await _translationDataTemp.stream.first;
+    var filter = translationData.where((translation) => translation[language] == word).toList();
+    var index2 = lastTempList.indexOf(filter.length > 0 ? filter[0] : {});
+    if (language != "french" && (filter.length > 2 || (filter.length == 1 && index2 != index))) {
+      return true;
+    } else {
+      db.changeTranslation(
+          word, language, lastTempList[index]["spanish"]);
+      for (var i = 0; i < translationData.length; i++) {
+        if (translationData[i]["spanish"] ==
+            lastTempList[index]["spanish"]) {
+          translationData[i][language] = word;
+        }
+      }
+      return false;
+    }
+  }
+
+  void dispose() {
+    _queryChangeController.close();
+    _deleteListItem.close();
+    _addListItem.close();
+    _onFocusChange.close();
+    _translationDataTemp.close();
+    _searchBarState.close();
   }
 }

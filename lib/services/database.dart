@@ -5,7 +5,6 @@ import 'package:sqflite/sqflite.dart';
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter_tensoring/Translation.dart';
 
 class TranslationDatabase {
   static final TranslationDatabase _instance = TranslationDatabase._internal();
@@ -113,7 +112,7 @@ class TranslationDatabase {
 
   Future<Map<String, dynamic>> getConjugation(String spanish) async {
     var dbClient = await db;
-    Map<String, dynamic> resultFinal = {"present": {}, "future": {}};
+    Map<String, List> resultFinal = {"present": [], "future": []};
     var results = await dbClient.rawQuery(
         'SELECT * FROM Translations WHERE spanish = "' + spanish + '"');
     print('SELECT * FROM Translations WHERE spanish = "' + spanish + '"');
@@ -134,6 +133,8 @@ class TranslationDatabase {
       results[0]["future5"],
       results[0]["future6"],
     ];
+    print("result final");
+    print(resultFinal);
     return resultFinal;
   }
 

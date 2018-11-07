@@ -1,28 +1,16 @@
-import 'dart:async';
-
 import 'package:meta/meta.dart';
 import 'package:flutter/material.dart';
-import 'package:audio_recorder/audio_recorder.dart';
-import 'package:file/file.dart';
-import 'package:file/local.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io' as io;
-import 'package:audioplayers/audioplayers.dart';
 
-import 'package:flutter_tensoring/conjugation.dart';
+import 'package:flutter_tensoring/pages/conjugation/conjugation.dart';
 import 'package:flutter_tensoring/assets/theme.dart';
 import 'package:flutter_tensoring/BlocProvider.dart';
+import 'package:flutter_tensoring/widgets/recorderPlayer.dart';
 
 class Translation extends StatefulWidget {
   final String spanish;
   final String french;
   final bool verb;
   final int index;
-  final unfocus;
-  final remove;
-  final present;
-  final future;
-  final LocalFileSystem localFileSystem;
 
   Translation({
     Key key,
@@ -31,14 +19,9 @@ class Translation extends StatefulWidget {
     @required this.verb,
     localFileSystem,
     this.index,
-    this.unfocus,
-    this.present,
-    this.future,
-    this.remove,
   })  : assert(spanish != null),
         assert(french != null),
         assert(verb != null),
-        this.localFileSystem = localFileSystem ?? LocalFileSystem(),
         super(key: key);
 
   Map<String, dynamic> toMap1() {
@@ -61,26 +44,10 @@ class TranslationState extends State<Translation> {
   bool highlightSpanish = false;
   bool highlightFrench = false;
   Widget iconOpen = Container();
-  bool _isRecording = false;
-  bool _isPlaying = false;
-  Recording _recording = new Recording();
-  AudioPlayer audioPlayer = new AudioPlayer();
-  IconData iconLeft = Icons.play_circle_filled;
-  IconData iconRight = Icons.mic;
-  Color playColor = Colors.blueGrey.withOpacity(0.5);
 
   @override
   void initState() {
     super.initState();
-    audioPlayer.completionHandler = () {
-      setState(() {
-        _isPlaying = false;
-        iconLeft = Icons.play_circle_filled;
-        iconRight = Icons.mic;
-        playColor = Colors.blue;
-      });
-    };
-    initAudioPlayer();
     print(widget.spanish);
     spanishController.text = widget.spanish;
     frenchController.text = widget.french;
@@ -97,7 +64,6 @@ class TranslationState extends State<Translation> {
   @override
   void didUpdateWidget(translation) {
     super.didUpdateWidget(translation);
-    initAudioPlayer();
     spanishController.text = widget.spanish;
     frenchController.text = widget.french;
     if (widget.verb) {
@@ -110,23 +76,10 @@ class TranslationState extends State<Translation> {
     }
   }
 
-  initAudioPlayer() async {
-    var dir = await getApplicationDocumentsDirectory();
-    if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
-      setState(() {
-        playColor = Colors.blue;
-      });
-    } else {
-      setState(() {
-        playColor = Colors.blueGrey.withOpacity(0.5);
-      });
-    }
-  }
-
-  void _onFocusSpanish() {
-    if (!_focusSpanish.hasFocus && spanishController.text != widget.spanish) {
+  void _onFocusSpanish() async {
+    if (!_focusSpanish.hasFocus) {
       highlightSpanish =
-          widget.unfocus("spanish", widget.index, spanishController.text);
+          await BlocProvider.of1(context).onTranslationChange("spanish", widget.index, spanishController.text);
     } else if (!_focusSpanish.hasFocus) {
       highlightSpanish = false;
     }
@@ -136,10 +89,10 @@ class TranslationState extends State<Translation> {
     setState(() {});
   }
 
-  void _onFocusFrench() {
-    if (!_focusFrench.hasFocus && frenchController.text != widget.french) {
+  void _onFocusFrench() async {
+    if (!_focusFrench.hasFocus) {
       highlightFrench =
-          widget.unfocus("french", widget.index, frenchController.text);
+          await BlocProvider.of1(context).onTranslationChange("french", widget.index, frenchController.text);
     } else if (!_focusFrench.hasFocus) {
       highlightFrench = false;
     }
@@ -149,125 +102,15 @@ class TranslationState extends State<Translation> {
     setState(() {});
   }
 
-  void startRecording() async {
-    try {
-      if (await AudioRecorder.hasPermissions) {
-        print("user gave permisssion");
-        if (widget.spanish != null && widget.spanish != "") {
-          String path = widget.spanish;
-          if (!widget.spanish.contains('/')) {
-            io.Directory appDocDirectory =
-            await getApplicationDocumentsDirectory();
-            path = appDocDirectory.path + '/' + widget.spanish;
-          }
-          print("Start recording: $path");
-          await AudioRecorder.start(
-              path: path, audioOutputFormat: AudioOutputFormat.AAC);
-        } else {
-          await AudioRecorder.start();
-        }
-        bool isRecording = await AudioRecorder.isRecording;
-        setState(() {
-          _recording = new Recording(duration: new Duration(), path: "");
-          _isRecording = isRecording;
-        });
-      } else {
-        Scaffold.of(context).showSnackBar(
-            new SnackBar(content: new Text("You must accept permissions")));
-      }
-    } catch (e) {
-      print("error:");
-      print(e);
-    }
-  }
-
-  Future stopRecording() async {
-    var recording = await AudioRecorder.stop();
-    print("Stop recording: ${recording.path}");
-    bool isRecording = await AudioRecorder.isRecording;
-    File file = widget.localFileSystem.file(recording.path);
-    print("  File length: ${await file.length()}");
-    setState(() {
-      _recording = recording;
-      _isRecording = isRecording;
-    });
-  }
-
-  void onPressedIconLeft() async {
-    if (!_isRecording && !_isPlaying) {
-      var dir = await getApplicationDocumentsDirectory();
-      if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
-        int result = await audioPlayer.play('${dir.path}/${widget.spanish}.m4a', isLocal: true);
-        if (result == 1) {
-          setState(() {
-            _isPlaying = true;
-            playColor = Colors.blueGrey.withOpacity(0.5);
-            iconLeft = Icons.pause;
-            iconRight = Icons.stop;
-          });
-        }
-      }
-    } else if (_isRecording && !_isPlaying) {
-      await stopRecording();
-      var dir = await getApplicationDocumentsDirectory();
-      if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
-        io.File('${dir.path}/${widget.spanish}.m4a').delete();
-      }
-      iconLeft = Icons.play_circle_filled;
-      iconRight = Icons.mic;
-    } else if (!_isRecording && _isPlaying) {
-      int result = await audioPlayer.pause();
-      if (result == 1) {
-        _isPlaying = false;
-        playColor = Colors.blue;
-        iconLeft = Icons.play_circle_filled;
-        iconRight = Icons.mic;
-      }
-    }
-    setState(() {
-
-    });
-  }
-
-  void onPressedIconRight() async {
-    if (!_isRecording && !_isPlaying) {
-      var dir = await getApplicationDocumentsDirectory();
-      if (await io.File('${dir.path}/${widget.spanish}.m4a').exists()) {
-        io.File('${dir.path}/${widget.spanish}.m4a').delete();
-      }
-      startRecording();
-      playColor = Colors.blueGrey.withOpacity(0.5);
-      iconLeft = Icons.cancel;
-      iconRight = Icons.done;
-    } else if (_isRecording && !_isPlaying) {
-      stopRecording();
-      playColor = Colors.blue;
-      iconLeft = Icons.play_circle_filled;
-      iconRight = Icons.mic;
-    } else if (!_isRecording && _isPlaying) {
-      int result = await audioPlayer.stop();
-      if (result == 1) {
-        _isPlaying = false;
-        playColor = Colors.blue;
-        iconLeft = Icons.play_circle_filled;
-        iconRight = Icons.mic;
-      }
-    }
-    setState(() {
-
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bloc = BlocProvider.of(context);
+    final bloc = BlocProvider.of1(context);
     return Dismissible(
         background: Container(color: Colors.red),
         key: Key(widget.spanish),
         onDismissed: (info) {
           print("delete item");
           bloc.deleteListItem.add(widget.index);
-          //widget.remove(widget.index);
         },
         child: Padding(
             padding: EdgeInsets.only(
@@ -342,40 +185,7 @@ class TranslationState extends State<Translation> {
                                 width: 25.0,
                                 child: iconOpen
                             ),
-                            Row(
-                              children: <Widget>[
-                                Container(
-                                  height: 25.0,
-                                  width: 25.0,
-                                  child: IconButton(
-                                    iconSize: 18.0,
-                                      icon: Icon(
-                                        iconLeft,
-                                        color: playColor,
-                                      ),
-                                      padding: EdgeInsets.all(0.0),
-                                      onPressed: () async {
-                                        onPressedIconLeft();
-                                      },
-                                  ),
-                                ),
-                                Container(
-                                  height: 25.0,
-                                  width: 25.0,
-                                  child: IconButton(
-                                    iconSize: 18.0,
-                                    icon: Icon(
-                                      iconRight,
-                                      color: Colors.blueGrey.withOpacity(0.5),
-                                    ),
-                                    padding: EdgeInsets.all(0.0),
-                                    onPressed: () {
-                                      onPressedIconRight();
-                                    },
-                                  ),
-                                ),
-                              ],
-                            )
+                            RecorderPlayer(widget.spanish)
                           ],
                         ),
                       )

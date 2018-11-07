@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 
-import 'package:flutter_tensoring/assets/theme.dart';
 import 'package:flutter_tensoring/BlocProvider.dart';
 
 class AddTranslation extends StatefulWidget {
@@ -159,7 +157,7 @@ class NonVerbState extends State<NonVerb> {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = BlocProvider.of(context);
+    final bloc = BlocProvider.of1(context);
     return Form(
       key: _formKey,
       autovalidate: true,
