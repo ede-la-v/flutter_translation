@@ -1,8 +1,10 @@
-# flutter_tensoring
+# flutter_translation
 
-A new Flutter application.
+A basic Flutter app, created to begin learning Flutter and play with plugins
 
-## Getting Started
+## What is it?
 
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+A simple app that allows the user to input basic vocabulary and verbs in 2 languages, record and play audios
+The app could not be finished due to time constraints from work.
+
+
